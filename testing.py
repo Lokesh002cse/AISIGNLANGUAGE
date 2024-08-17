@@ -3,14 +3,20 @@ from cvzone.HandTrackingModule import HandDetector
 from cvzone.ClassificationModule import Classifier
 import numpy as np
 import math
+
 cap = cv2.VideoCapture(0)
 detector = HandDetector(maxHands=1)
 classifier = Classifier("Model/keras_model.h5", "Model/labels.txt")
 offset = 20
 imgSize = 300
-folder = "Data/C"
+folder = "Data/6"
 counter = 0
 labels = ["A", "B", "C", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+
+# Variables for tracking success rate
+total_predictions = 0
+correct_predictions = 0
+
 while True:
     success, img = cap.read()
     imgOutput = img.copy()
@@ -30,7 +36,6 @@ while True:
             wGap = math.ceil((imgSize - wCal) / 2)
             imgWhite[:, wGap:wCal + wGap] = imgResize
             prediction, index = classifier.getPrediction(imgWhite, draw=False)
-            print(prediction, index)
         else:
             k = imgSize / w
             hCal = math.ceil(k * h)
@@ -39,13 +44,22 @@ while True:
             hGap = math.ceil((imgSize - hCal) / 2)
             imgWhite[hGap:hCal + hGap, :] = imgResize
             prediction, index = classifier.getPrediction(imgWhite, draw=False)
-        cv2.rectangle(imgOutput, (x - offset, y - offset-50),
-                      (x - offset+90, y - offset-50+50), (255, 0, 255), cv2.FILLED)
-        cv2.putText(imgOutput, labels[index], (x, y - 26), cv2.FONT_HERSHEY_COMPLEX, 1.7, (255, 255, 255), 2)
-        cv2.rectangle(imgOutput, (x-offset, y-offset),
-                      (x + w+offset, y + h+offset), (255, 0, 255), 4)
+
+        # Update prediction tracking
+        total_predictions += 1
+        correct_label = labels.index(prediction) if prediction in labels else -1
+        if correct_label == index:
+            correct_predictions += 1
+
+        success_rate = (correct_predictions / total_predictions) * 100 if total_predictions > 0 else 0
+
+        cv2.rectangle(imgOutput, (x - offset, y - offset - 50),
+                      (x - offset + 90, y - offset - 50 + 50), (255, 0, 255), cv2.FILLED)
+        cv2.putText(imgOutput, f'{labels[index]} {success_rate:.2f}%', (x, y - 26), cv2.FONT_HERSHEY_COMPLEX, 1.7,
+                    (255, 255, 255), 2)
+        cv2.rectangle(imgOutput, (x - offset, y - offset),
+                      (x + w + offset, y + h + offset), (255, 0, 255), 4)
         cv2.imshow("ImageCrop", imgCrop)
         cv2.imshow("ImageWhite", imgWhite)
     cv2.imshow("Image", imgOutput)
     cv2.waitKey(1)
-    # Add a newline character at the end of the file
