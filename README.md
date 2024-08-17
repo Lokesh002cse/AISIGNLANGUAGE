@@ -44,7 +44,11 @@ To test the model, simply run the following command:
 python testing.py
 ~~~
 
-
 ## Contributing
 If you'd like to contribute to this project, feel free to fork the repository and submit a pull request. Contributions are always welcome!
 
+## Future Work
+updating ratings
+
+## License
+MIT
